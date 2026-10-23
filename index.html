@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Advanced PDF Editor</title>
+<style>
+:root{--blue:#2563eb;--bg:#f1f5f9;--ink:#172033;--line:#cbd5e1}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,Arial,sans-serif}
+header{text-align:center;padding:20px 12px 12px}h1{margin:0;color:var(--blue);font-size:clamp(1.7rem,6vw,2.5rem)}header p{margin:7px 0}
+main{max-width:1000px;margin:auto;padding:0 12px 28px}.card{background:#fff;border:1px solid #e2e8f0;border-radius:15px;padding:15px;margin:0 0 13px;box-shadow:0 3px 12px #0f172a08}
+h2{font-size:1.2rem;margin:0 0 10px}p{margin:6px 0}.muted{color:#64748b;font-size:.91rem}
+label{display:block;font-weight:600;font-size:.92rem;margin-top:7px}input,select,textarea{width:100%;font:inherit;padding:10px;border:1px solid var(--line);border-radius:9px;background:white;margin:4px 0 7px}
+button,.btn{font:inherit;border:0;border-radius:9px;padding:10px 12px;background:var(--blue);color:white;cursor:pointer;text-align:center;display:inline-block;text-decoration:none}
+button.secondary{background:#e2e8f0;color:#111827}button.danger{background:#b91c1c}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+button:disabled{opacity:.5;cursor:not-allowed}#preview{background:#e2e8f0;border-radius:10px;min-height:120px;padding:8px;text-align:center;overflow:auto}canvas{max-width:100%;height:auto;background:white;box-shadow:0 2px 8px #0002}
+.status{font-size:.92rem;overflow-wrap:anywhere}.notice{background:#eff6ff;border-radius:9px;padding:10px;font-size:.9rem}
+@media(max-width:540px){.grid,.row{grid-template-columns:1fr}.card{padding:13px}}
+</style>
+</head>
+<body>
+<header><h1>Advanced PDF Editor</h1><p>Edit pages, add text and images, sign and download</p></header>
+<main>
+<section class="card">
+<h2>1. Open PDF</h2><p class="muted">Choose a PDF on your device. Processing happens in this browser tab using the libraries below.</p>
+<input id="pdfFile" type="file" accept=".pdf,application/pdf">
+<div class="row"><div><label for="page">Current page</label><input id="page" type="number" min="1" value="1"></div><div><label for="scale">Preview size</label><select id="scale"><option value="0.8">80%</option><option value="1" selected>100%</option><option value="1.3">130%</option></select></div></div>
+<button id="previewBtn">Preview page</button><p id="loadStatus" class="status">No PDF opened.</p><div id="preview"><p class="muted">PDF page preview appears here.</p></div>
+</section>
+<section class="card">
+<h2>2. Add text overlay</h2><p class="muted">Adds new text on top of a page; it does not directly replace existing embedded PDF text.</p>
+<label for="text">Text</label><textarea id="text" rows="2" placeholder="Type text to add"></textarea>
+<div class="row"><div><label for="x">X position (points)</label><input id="x" type="number" value="50" min="0"></div><div><label for="y">Y from bottom (points)</label><input id="y" type="number" value="700" min="0"></div></div>
+<div class="row"><div><label for="size">Font size</label><input id="size" type="number" min="6" max="72" value="18"></div><div><label for="color">Color</label><select id="color"><option value="black">Black</option><option value="blue">Blue</option><option value="red">Red</option></select></div></div>
+<button id="addText">Add text</button>
+</section>
+<section class="card">
+<h2>3. Add an image or signature</h2><p class="muted">Choose a PNG/JPG image or a signature image. Transparent PNG signatures work best.</p>
+<input id="imageFile" type="file" accept="image/png,image/jpeg">
+<div class="row"><div><label for="imgX">X position (points)</label><input id="imgX" type="number" value="50" min="0"></div><div><label for="imgY">Y from bottom (points)</label><input id="imgY" type="number" value="100" min="0"></div></div>
+<div class="row"><div><label for="imgW">Width (points)</label><input id="imgW" type="number" min="10" max="700" value="150"></div><div><label for="imgH">Height (points)</label><input id="imgH" type="number" min="10" max="700" value="60"></div></div>
+<button id="addImage">Add image/signature</button>
+</section>
+<section class="card">
+<h2>4. Page management</h2>
+<div class="grid">
+<button id="rotate">Rotate current page 90°</button><button id="delete" class="danger">Delete current page</button>
+</div>
+<label for="insertPage">Insert blank page</label><div class="row"><input id="insertPage" type="number" min="1" placeholder="Insert before page #"><button id="insert">Insert blank page</button></div>
+<hr style="border:0;border-top:1px solid #e2e8f0;margin:14px 0">
+<h2>5. Merge another PDF</h2><input id="mergeFile" type="file" accept=".pdf,application/pdf"><button id="merge">Append pages from second PDF</button>
+</section>
+<section class="card">
+<h2>6. Save and download</h2><label for="outName">Download filename</label><input id="outName" value="edited-document.pdf"><button id="download">Download edited PDF</button><p id="editStatus" class="status"></p>
+</section>
+<section class="card">
+<h2>Important limits</h2><div class="notice">This starter supports text overlays, adding PNG/JPG images or signature images, rotating/deleting pages, inserting blank pages, merging a second PDF and downloading. It does not yet edit existing text in place, OCR scanned documents, redact content securely, guarantee every form field, compress files, or apply cryptographic digital signatures. It loads PDF libraries from a CDN, so internet access is required. Do not rely on visual white boxes to securely hide confidential text.</div>
+</section>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+const $=id=>document.getElementById(id);let doc=null,bytes=null;
+function msg(id,t,bad=false){$(id).textContent=t;$(id).style.color=bad?'#b91c1c':'#087443'}
+function idx(){return Number($('page').value)-1}
+function currentPage(){if(!doc)throw Error('ആദ്യം PDF തുറക്കുക.');const i=idx(),p=doc.getPages()[i];if(!p)throw Error('Page number ശരിയല്ല.');return {i,p}}
+$('pdfFile').addEventListener('change',async()=>{try{const f=$('pdfFile').files[0];if(!f)return;bytes=await f.arrayBuffer();doc=await PDFLib.PDFDocument.load(bytes);$('page').value=1;$('page').max=doc.getPageCount();$('outName').value=f.name.replace(/\.pdf$/i,'')+'-edited.pdf';msg('loadStatus',`Opened ${f.name} · ${doc.getPageCount()} pages`);await preview()}catch(e){msg('loadStatus','PDF തുറക്കാനായില്ല. Password-protected അല്ലെങ്കിൽ damaged PDF ആകാം.',true)}});
+async function preview(){if(!bytes)return msg('loadStatus','ആദ്യം PDF തിരഞ്ഞെടുക്കുക.',true);try{const pdoc=await pdfjsLib.getDocument({data:bytes.slice(0)}).promise;const i=idx();if(i<0||i>=pdoc.numPages)throw Error();const p=await pdoc.getPage(i+1),vp=p.getViewport({scale:Number($('scale').value)}),c=document.createElement('canvas');c.width=vp.width;c.height=vp.height;$('preview').replaceChildren(c);await p.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;msg('loadStatus',`Preview page ${i+1} / ${pdoc.numPages}`)}catch(e){msg('loadStatus','Preview കാണിക്കാൻ കഴിഞ്ഞില്ല. Page number പരിശോധിക്കുക.',true)}}
+$('previewBtn').onclick=preview;$('scale').onchange=preview;
+$('addText').onclick=()=>{try{const {p}=currentPage(),t=$('text').value.trim();if(!t)throw Error('ടെക്സ്റ്റ് എഴുതുക.');const colors={black:PDFLib.rgb(0,0,0),blue:PDFLib.rgb(0,0.2,0.85),red:PDFLib.rgb(.8,0,0)};p.drawText(t,{x:Math.max(0,Number($('x').value)||0),y:Math.max(0,Number($('y').value)||0),size:Math.min(72,Math.max(6,Number($('size').value)||18)),color:colors[$('color').value],maxWidth:Math.max(20,p.getWidth()-20)});msg('editStatus','Text ചേർത്തു. Preview അടിസ്ഥാന ഫയലിന്റെ പഴയ നിലയായിരിക്കും; Download ചെയ്ത് പരിശോധിക്കുക.')}catch(e){msg('editStatus',e.message,true)}};
+$('addImage').onclick=async()=>{try{const {p}=currentPage(),f=$('imageFile').files[0];if(!f)throw Error('PNG/JPG ചിത്രം തിരഞ്ഞെടുക്കുക.');const ab=await f.arrayBuffer(),img=f.type==='image/png'?await doc.embedPng(ab):f.type==='image/jpeg'?await doc.embedJpg(ab):null;if(!img)throw Error('PNG അല്ലെങ്കിൽ JPG മാത്രം പിന്തുണയ്ക്കുന്നു.');p.drawImage(img,{x:Math.max(0,Number($('imgX').value)||0),y:Math.max(0,Number($('imgY').value)||0),width:Math.max(10,Number($('imgW').value)||150),height:Math.max(10,Number($('imgH').value)||60)});msg('editStatus','ചിത്രം/ഒപ്പ് ചേർത്തു. Download ചെയ്ത് പരിശോധിക്കുക.')}catch(e){msg('editStatus',e.message,true)}};
+$('rotate').onclick=()=>{try{const {p}=currentPage();p.setRotation(PDFLib.degrees((p.getRotation().angle+90)%360));msg('editStatus','പേജ് തിരിച്ചു. Download ചെയ്ത് സംരക്ഷിക്കുക.')}catch(e){msg('editStatus',e.message,true)}};
+$('delete').onclick=()=>{try{const {i}=currentPage();if(doc.getPageCount()<=1)throw Error('അവസാന പേജ് delete ചെയ്യാൻ കഴിയില്ല.');doc.removePage(i);$('page').max=doc.getPageCount();$('page').value=Math.min(i+1,doc.getPageCount());msg('editStatus','പേജ് delete ചെയ്തു. Download ചെയ്ത് സംരക്ഷിക്കുക.')}catch(e){msg('editStatus',e.message,true)}};
+$('insert').onclick=()=>{try{if(!doc)throw Error('ആദ്യം PDF തുറക്കുക.');const n=Number($('insertPage').value);if(!Number.isInteger(n)||n<1||n>doc.getPageCount()+1)throw Error('Insert page number തെറ്റാണ്.');const ref=doc.getPages()[Math.min(n-1,doc.getPageCount()-1)],w=ref.getWidth(),h=ref.getHeight();doc.insertPage(n-1,[w,h]);$('page').max=doc.getPageCount();$('page').value=n;msg('editStatus','Blank page ചേർത്തു. Download ചെയ്ത് സംരക്ഷിക്കുക.')}catch(e){msg('editStatus',e.message,true)}};
+$('merge').onclick=async()=>{try{if(!doc)throw Error('ആദ്യം PDF തുറക്കുക.');const f=$('mergeFile').files[0];if(!f)throw Error('രണ്ടാമത്തെ PDF തിരഞ്ഞെടുക്കുക.');const other=await PDFLib.PDFDocument.load(await f.arrayBuffer()),pages=await doc.copyPages(other,other.getPageIndices());pages.forEach(p=>doc.addPage(p));$('page').max=doc.getPageCount();msg('editStatus',`PDF ചേർത്തു. ആകെ ${doc.getPageCount()} pages. Download ചെയ്യുക.`)}catch(e){msg('editStatus','Merge പരാജയപ്പെട്ടു. PDF സാധുവാണോ പരിശോധിക്കുക.',true)}};
+$('download').onclick=async()=>{try{if(!doc)throw Error('ആദ്യം PDF തുറക്കുക.');let name=$('outName').value.trim()||'edited-document.pdf';if(!name.toLowerCase().endsWith('.pdf'))name+='.pdf';const out=await doc.save(),blob=new Blob([out],{type:'application/pdf'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);msg('editStatus','Download ആരംഭിച്ചു. ഫോണിലെ Downloads ഫോൾഡർ പരിശോധിക്കുക.')}catch(e){msg('editStatus','Download പരാജയപ്പെട്ടു.',true)}};
+</script>
+</body></html>
